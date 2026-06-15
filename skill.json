@@ -123,7 +123,9 @@
     "context_rules": {
       "md_files": "全文读入上下文 — 读完整个 .md 便于后续处理",
       "drawio_files": "全文读入上下文 — 需要检查图表内部引用",
-      "docx_pdf_files": "只记文件名和大小 — 不读正文，节省上下文",
+      "docx_doc_files": "agent 无法直接读取！先 pandoc 转 .md → 全文读入理解内容",
+      "pdf_files": "agent 无法直接读取！先 pdftotext 转 .md → 全文读入理解内容",
+      "pre_convert": "扫描到 .docx/.doc/.pdf 后，必须先转为临时 .md 再读。不要只记文件名！",
       "skill_json": "全文读入 — 获取转换规则和汇报模板",
       "task_md": "全文读入 — 理解用户需求。只读不写！task.md 是任务指令，作业内容写到新文件。"
     },

@@ -137,6 +137,17 @@ python md2docx_pdf.py -y --drawio
 find . -type f \( -name "*.md" -o -name "*.docx" -o -name "*.doc" -o -name "*.pdf" -o -name "*.tex" -o -name "*.drawio" -o -name "*.dio" \) | grep -v '/\.'
 ```
 
+### Step 1.5: 预转换不可读文件（agent 必须能读懂！）
+扫描到 .docx/.doc/.pdf 后，**先转为 .md 再读**：
+```bash
+# docx → 临时 md
+pandoc file.docx -o _preview_file.md --standalone
+
+# pdf → 临时 md  
+pdftotext -layout file.pdf _preview_file.md
+```
+读完理解内容后，再决定怎么做。
+
 ### Step 2: 读 task.md（只读不写！）
 - `task.md` 是任务指令文件，**永远不要修改它的内容**
 - 如果「我的任务」区域有具体文件名和勾选 → 按勾选转换列出的文件
@@ -171,12 +182,37 @@ python .claude/skills/md2docx-pdf/md2docx_pdf.py file.md -y
 
 ## 上下文策略
 
+### 核心原则：agent 必须能读懂所有文件
+
+**agent 无法直接读取 .docx/.doc/.pdf（二进制格式）。扫描到这些文件时，必须先转为 .md 再读！**
+
+### 预转换流程（扫描后、决策前执行）
+
+```
+扫描目录 → 发现 .docx/.doc/.pdf
+  │
+  ├─ .docx/.doc → pandoc → 临时 .md → agent 读完理解内容
+  └─ .pdf       → pdftotext → 临时 .md → agent 读完理解内容
+```
+
+命令：
+```bash
+# docx → md 提取文字
+pandoc file.docx -o _preview_file.md --standalone
+
+# pdf → md 提取文字
+pdftotext -layout file.pdf _preview_file.md
+```
+
+### 读取策略
+
 | 文件类型 | 处理方式 |
 |----------|----------|
-| `.md` | **全文读入上下文** — 用户作业内容，必须读完 |
-| `.drawio` / `.dio` | **全文读入上下文** — 需要检查图表引用 |
-| `.docx` / `.doc` / `.pdf` | **只记文件名 + 大小** — 不读正文节省上下文 |
-| `task.md` | **全文读入** — 理解用户需求 |
+| `.md` | **全文读入** — 用户作业内容，必须读完 |
+| `.drawio` / `.dio` | **全文读入** — 检查图表引用 |
+| `.docx` / `.doc` | **先 pandoc 转 .md → 全文读入** — 读完再决定怎么处理 |
+| `.pdf` | **先 pdftotext 转 .md → 全文读入** — 读完再决定怎么处理 |
+| `task.md` | **全文读入** — 理解用户需求（只读不写！） |
 | `skill.json` | **全文读入** — 获取转换规则和汇报模板 |
 
 ---
