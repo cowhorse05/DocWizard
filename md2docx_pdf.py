@@ -140,9 +140,91 @@ def has_pdftotext() -> bool:
 
 # ── Conversion Engine ──────────────────────────────────────────
 
+# ── Reference DOCX (black text) ─────────────────────────────────
+_REF_DOCX: Optional[Path] = None
+
+
+def _ensure_reference_docx() -> Optional[Path]:
+    """Create a reference.docx with all text forced to black.
+    Cached in memory—only generated once per session.
+    """
+    global _REF_DOCX
+    if _REF_DOCX is not None:
+        return _REF_DOCX
+
+    import zipfile, re as _re
+
+    script_dir = Path(__file__).resolve().parent
+    ref_path = script_dir / 'reference.docx'
+    tmp_dir = script_dir / '_ref_tmp'
+
+    try:
+        # Step 1: generate minimal docx
+        md = script_dir / '_ref_src.md'
+        md.write_text('# X\n\nBody.\n\n|A|B|\n|-|-|\n|1|2|\n', encoding='utf-8')
+        subprocess.run(['pandoc', str(md), '-o', str(ref_path), '--standalone'],
+                       capture_output=True, timeout=30)
+        md.unlink()
+
+        # Step 2: extract, fix xml, repack
+        if tmp_dir.exists():
+            shutil.rmtree(tmp_dir)
+        tmp_dir.mkdir()
+
+        with zipfile.ZipFile(ref_path) as z:
+            z.extractall(str(tmp_dir))
+
+        # Patch styles.xml – force all colors to black
+        styles_path = tmp_dir / 'word' / 'styles.xml'
+        if styles_path.exists():
+            xml = styles_path.read_text(encoding='utf-8')
+            xml = _re.sub(r'<w:color w:val="[^"]*"', '<w:color w:val="000000"', xml)
+            # Ensure default run props force black
+            if '<w:rPrDefault>' not in xml:
+                xml = xml.replace(
+                    '</w:docDefaults>',
+                    '<w:rPrDefault><w:rPr><w:color w:val="000000"/></w:rPr></w:rPrDefault></w:docDefaults>')
+            styles_path.write_text(xml, encoding='utf-8')
+
+        # Patch document.xml
+        doc_xml = tmp_dir / 'word' / 'document.xml'
+        if doc_xml.exists():
+            xml = doc_xml.read_text(encoding='utf-8')
+            xml = _re.sub(r'<w:color w:val="[^"]*"', '<w:color w:val="000000"', xml)
+            doc_xml.write_text(xml, encoding='utf-8')
+
+        # Repack
+        ref_path.unlink()
+        with zipfile.ZipFile(ref_path, 'w', zipfile.ZIP_DEFLATED) as zout:
+            for root, _, files in os.walk(str(tmp_dir)):
+                for fn in files:
+                    full = Path(root) / fn
+                    arc = str(full.relative_to(tmp_dir)).replace('\\', '/')
+                    zout.write(str(full), arc)
+
+        shutil.rmtree(tmp_dir)
+        _REF_DOCX = ref_path
+        return ref_path
+
+    except Exception as e:
+        if tmp_dir.exists():
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+        print(f"  (参考模板生成失败，使用默认样式: {e})")
+        return None
+
+
 def pandoc_convert(src: Path, dst: Path) -> bool:
-    """Use pandoc to convert between supported formats."""
+    """Use pandoc to convert between supported formats.
+    Uses black-text reference.docx for all DOCX output.
+    """
     cmd = ['pandoc', str(src), '-o', str(dst), '--standalone']
+
+    # Use reference docx for .docx output to force black text
+    if dst.suffix.lower() == '.docx':
+        ref = _ensure_reference_docx()
+        if ref and ref.exists():
+            cmd += ['--reference-doc=' + str(ref)]
+
     try:
         subprocess.run(cmd, capture_output=True, timeout=120)
         return dst.exists() and dst.stat().st_size > 50
