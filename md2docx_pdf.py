@@ -517,6 +517,74 @@ def has_latex() -> Optional[str]:
 _REF_DOCX: Optional[Path] = None
 
 
+def _force_black_text_in_docx(docx_path: Path):
+    """Post-process a docx file to force ALL text to black.
+    Patches styles.xml and document.xml in memory, writes directly back.
+    This is the safety net — even if reference.docx fails, this catches it.
+    """
+    import zipfile, re as _re, io
+
+    try:
+        # Read original zip into memory
+        with zipfile.ZipFile(docx_path, 'r') as zin:
+            files = {name: zin.read(name) for name in zin.namelist()}
+
+        patched = False
+
+        # Patch styles.xml
+        if 'word/styles.xml' in files:
+            xml = files['word/styles.xml'].decode('utf-8')
+            # Replace all color values with 000000
+            xml = _re.sub(r'(<w:color\b[^>]*?)w:val="[^"]*"', r'\1w:val="000000"', xml)
+            # Kill themeColor/themeShade/themeTint — they override w:val
+            xml = _re.sub(r'\s*w:themeColor="[^"]*"', '', xml)
+            xml = _re.sub(r'\s*w:themeShade="[^"]*"', '', xml)
+            xml = _re.sub(r'\s*w:themeTint="[^"]*"', '', xml)
+            # Ensure default run props force black
+            if '<w:rPrDefault>' in xml:
+                xml = _re.sub(
+                    r'(<w:rPrDefault>\s*<w:rPr)([^>]*>)',
+                    r'\1\2><w:color w:val="000000"/>',
+                    xml, flags=_re.DOTALL)
+            else:
+                xml = xml.replace(
+                    '</w:docDefaults>',
+                    '<w:rPrDefault><w:rPr><w:color w:val="000000"/></w:rPr></w:rPrDefault></w:docDefaults>')
+            files['word/styles.xml'] = xml.encode('utf-8')
+            patched = True
+
+        # Patch document.xml
+        if 'word/document.xml' in files:
+            xml = files['word/document.xml'].decode('utf-8')
+            xml = _re.sub(r'(<w:color\b[^>]*?)w:val="[^"]*"', r'\1w:val="000000"', xml)
+            xml = _re.sub(r'\s*w:themeColor="[^"]*"', '', xml)
+            xml = _re.sub(r'\s*w:themeShade="[^"]*"', '', xml)
+            xml = _re.sub(r'\s*w:themeTint="[^"]*"', '', xml)
+            files['word/document.xml'] = xml.encode('utf-8')
+            patched = True
+
+        if not patched:
+            return True
+
+        # Build new zip in memory, write directly to original path
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zout:
+            for name, data in files.items():
+                zout.writestr(name, data)
+        new_bytes = buf.getvalue()
+
+        # Write directly — don't delete+rename (fails if Word has file open)
+        try:
+            docx_path.write_bytes(new_bytes)
+        except PermissionError:
+            # File locked by another process, write to alternative name
+            alt = docx_path.parent / f'{docx_path.stem}_black{docx_path.suffix}'
+            alt.write_bytes(new_bytes)
+        return True
+    except Exception:
+        return False
+
+
 def _ensure_reference_docx() -> Optional[Path]:
     """Create a reference.docx with all text forced to black.
     Cached in memory—only generated once per session.
@@ -551,9 +619,19 @@ def _ensure_reference_docx() -> Optional[Path]:
         styles_path = tmp_dir / 'word' / 'styles.xml'
         if styles_path.exists():
             xml = styles_path.read_text(encoding='utf-8')
-            xml = _re.sub(r'<w:color w:val="[^"]*"', '<w:color w:val="000000"', xml)
-            # Ensure default run props force black
-            if '<w:rPrDefault>' not in xml:
+            # Replace all color values with 000000
+            xml = _re.sub(r'(<w:color\b[^>]*?)w:val="[^"]*"', r'\1w:val="000000"', xml)
+            # Kill themeColor/themeShade/themeTint — they override w:val
+            xml = _re.sub(r'\s*w:themeColor="[^"]*"', '', xml)
+            xml = _re.sub(r'\s*w:themeShade="[^"]*"', '', xml)
+            xml = _re.sub(r'\s*w:themeTint="[^"]*"', '', xml)
+            # Inject black into default run props (always, not just if missing)
+            if '<w:rPrDefault>' in xml:
+                xml = _re.sub(
+                    r'(<w:rPrDefault>\s*<w:rPr)([^>]*>)',
+                    r'\1\2><w:color w:val="000000"/>',
+                    xml, flags=_re.DOTALL)
+            else:
                 xml = xml.replace(
                     '</w:docDefaults>',
                     '<w:rPrDefault><w:rPr><w:color w:val="000000"/></w:rPr></w:rPrDefault></w:docDefaults>')
@@ -563,7 +641,10 @@ def _ensure_reference_docx() -> Optional[Path]:
         doc_xml = tmp_dir / 'word' / 'document.xml'
         if doc_xml.exists():
             xml = doc_xml.read_text(encoding='utf-8')
-            xml = _re.sub(r'<w:color w:val="[^"]*"', '<w:color w:val="000000"', xml)
+            xml = _re.sub(r'(<w:color\b[^>]*?)w:val="[^"]*"', r'\1w:val="000000"', xml)
+            xml = _re.sub(r'\s*w:themeColor="[^"]*"', '', xml)
+            xml = _re.sub(r'\s*w:themeShade="[^"]*"', '', xml)
+            xml = _re.sub(r'\s*w:themeTint="[^"]*"', '', xml)
             doc_xml.write_text(xml, encoding='utf-8')
 
         # Repack
@@ -588,19 +669,24 @@ def _ensure_reference_docx() -> Optional[Path]:
 
 def pandoc_convert(src: Path, dst: Path) -> bool:
     """Use pandoc to convert between supported formats.
-    Uses black-text reference.docx for all DOCX output.
+    Uses black-text reference.docx + post-processing for all DOCX output.
     """
     cmd = ['pandoc', str(src), '-o', str(dst), '--standalone']
 
     # Use reference docx for .docx output to force black text
-    if dst.suffix.lower() == '.docx':
+    is_docx = dst.suffix.lower() == '.docx'
+    if is_docx:
         ref = _ensure_reference_docx()
         if ref and ref.exists():
             cmd += ['--reference-doc=' + str(ref)]
 
     try:
         subprocess.run(cmd, capture_output=True, timeout=120)
-        return dst.exists() and dst.stat().st_size > 50
+        ok = dst.exists() and dst.stat().st_size > 50
+        # Post-process: force ALL text to black in output docx
+        if ok and is_docx:
+            _force_black_text_in_docx(dst)
+        return ok
     except Exception:
         return False
 
