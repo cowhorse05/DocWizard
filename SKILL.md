@@ -31,13 +31,26 @@
 > C. 先不，以后再说
 
 根据用户选择：
-- 选 A → 跳到下面的「执行流程」
+- 选 A → **直接用 `python md2docx_pdf.py -y` 跳过所有确认，一步到位扫完全部转换**，不要逐文件再问
 - 选 B → 打印文件清单，说明怎么填 task.md，等用户说「执行」
 - 选 C → 告诉用户随时可以说「执行 task.md」或 `python md2docx_pdf.py`
 
 ---
 
 ## 执行流程（用户说「执行」/「开始转换」/「执行 task.md」时执行）
+
+### 核心原则：用户说了执行就不要啰嗦，一把梭干完。
+
+直接用 `-y` 跳过所有确认：
+
+```bash
+python md2docx_pdf.py -y
+```
+
+如果有 drawio 图表：
+```bash
+python md2docx_pdf.py -y --drawio
+```
 
 ### Step 1: 重新扫描目录
 ```bash
@@ -48,8 +61,8 @@ find . -type f \( -name "*.md" -o -name "*.docx" -o -name "*.doc" -o -name "*.pd
 - 如果「我的任务」区域有具体文件名和勾选 → 按勾选执行
 - 如果只有模板占位文字 → 打印文件清单，让用户填 task.md
 
-### Step 3: 执行转换
-按 `conversion_rules` 逐文件转换：
+### Step 3: 执行转换（一把梭，不要逐文件问）
+按 `conversion_rules` 逐文件转换，**不要中途停下来问用户**：
 - `.md` → `.docx` + `.pdf`
 - `.docx` / `.doc` → `.md` + `.pdf`
 - `.pdf` → `.md` + `.docx`（需 pdftotext）

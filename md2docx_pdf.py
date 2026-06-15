@@ -859,9 +859,10 @@ GitHub: {REPO_URL}
         cfg = load_setup_config()
         if not cfg.get('auto_scan'):
             sys.exit(0)
-        # auto_scan: force scan mode with current directory
+        # auto_scan: skip ALL prompts, just do it
         print("  自动进入扫描模式...")
-        args.scan = '.'  # Trigger scan mode below
+        args.scan = '.'
+        args.yes = True   # 不啰嗦，直接全转
 
     # Check pandoc
     if not ensure_pandoc():
