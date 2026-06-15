@@ -41,11 +41,18 @@ python md2docx_pdf.py 报告.md -f pdf
 
 > 帮我安装 https://github.com/cowhorse05/md2doc2pdf 这个 skill，然后把我文件夹里的文档全部转换。先检查 pandoc 有没有装，没装帮我装一下。
 
-**或者更短：**
+**或者更短（用 task.md）：**
 
-> 装 md2doc2pdf skill，把我目录下所有 md/docx/pdf 互转。
+> 执行 task.md
 
-AI 读到 `skill.json` 后会自己检测系统、装 pandoc、扫描文件、逐个转换。图表多的作业加一句 "drawio 也导出" 就行。
+clone 下来的仓库带了一个 `task.md` 模板，把你的文件名列进去，勾上要转的格式，然后一句话交给 AI。AI 会：
+
+1. 读 `task.md` 了解你的需求
+2. 扫描目录，把找到的文件填进文件列表表格
+3. 按你勾选的要求执行转换
+4. 把结果写回 `task.md` 的执行结果表格
+
+图表多的作业加一句 "drawio 也导出" 就行。
 
 ---
 
