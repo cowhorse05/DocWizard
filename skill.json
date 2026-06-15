@@ -1,24 +1,48 @@
 {
   "name": "md2docx-pdf",
   "version": "1.0.0",
-  "description": "Cross-platform Markdown to DOCX & PDF converter with CJK support. Auto-detects pandoc and Chrome/Edge, prompts install instructions for missing dependencies.",
-  "author": "Li Yufeng",
-  "license": "MIT",
-  "repository": "https://github.com/cowhorse05/md2doc2pdf",
-  "keywords": ["markdown", "docx", "pdf", "pandoc", "converter", "cjk", "chinese", "cross-platform"],
+  "description": "Convert one or more .md files to .docx and/or .pdf. Cross-platform: Windows, macOS, Linux. Auto-detects pandoc and Chrome/Edge on the user's system and prints platform-specific install commands if dependencies are missing.",
   "entry": "md2docx_pdf.py",
-  "requirements": {
-    "python": ">=3.7",
-    "mandatory": ["pandoc"],
-    "optional": ["Google Chrome / Microsoft Edge / Chromium (for PDF output)"]
+  "python": ">=3.7",
+  "depends": {
+    "required": {
+      "pandoc": {
+        "check": "pandoc --version",
+        "install": {
+          "windows": "winget install pandoc",
+          "macos": "brew install pandoc",
+          "linux": "sudo apt install pandoc"
+        }
+      }
+    },
+    "optional": {
+      "browser": {
+        "description": "Chrome, Edge, or Chromium for PDF output only. Auto-searched from common paths.",
+        "install": {
+          "windows": "Chrome or Edge (usually pre-installed)",
+          "macos": "brew install --cask google-chrome",
+          "linux": "sudo apt install chromium-browser"
+        }
+      }
+    }
   },
-  "platforms": ["windows", "macos", "linux"],
-  "usage": "python md2docx_pdf.py <file.md> [-f {docx,pdf,both}] [-o output_dir]",
-  "examples": [
-    "python md2docx_pdf.py report.md",
-    "python md2docx_pdf.py report.md -f pdf",
-    "python md2docx_pdf.py report.md -f both",
-    "python md2docx_pdf.py *.md -f both",
-    "python md2docx_pdf.py report.md -f both -o ./output"
-  ]
+  "usage": {
+    "command": "python md2docx_pdf.py <inputs> [-f FORMAT] [-o DIR]",
+    "arguments": {
+      "inputs": ".md file paths or glob patterns like *.md. Supports multiple files.",
+      "-f": "Output format: docx (default), pdf, or both",
+      "-o": "Output directory. If omitted, files land next to their source .md files."
+    },
+    "examples": [
+      "python md2docx_pdf.py report.md",
+      "python md2docx_pdf.py report.md -f pdf",
+      "python md2docx_pdf.py report.md -f both",
+      "python md2docx_pdf.py *.md -f both",
+      "python md2docx_pdf.py report.md -f both -o ./output"
+    ]
+  },
+  "pipeline": {
+    "docx": ".md -> pandoc -> .docx",
+    "pdf": ".md -> pandoc -> html5 -> inject CJK CSS -> headless browser -> .pdf"
+  }
 }

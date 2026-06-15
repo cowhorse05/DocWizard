@@ -1,139 +1,73 @@
 # md2docx-pdf
 
-> Cross-platform CLI tool: Markdown → DOCX + PDF, with full CJK support.
-> Auto-detects platform, checks dependencies, gives clear install instructions.
+> Markdown → DOCX + PDF，一键转换，完美支持中文。自动检测系统，缺依赖会提示你怎么装。
 
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)](#)
-[![Python](https://img.shields.io/badge/python-3.7+-blue)](https://www.python.org/)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+跨平台命令行工具，把 `.md` 文件转成排版精美的 Word 文档和 PDF。
 
 ---
 
-## Quick Start
+## 快速开始
 
 ```bash
-# Download
 git clone https://github.com/cowhorse05/md2doc2pdf.git
 cd md2doc2pdf
 
-# Install dependencies (auto-detected on first run with install hints)
-#   - pandoc (required): https://pandoc.org/installing.html
-#   - Chrome/Edge (optional, for PDF only)
+# 装依赖，首次运行会自动检测，没装会打印安装命令
+#   pandoc（必装）
+#   Chrome/Edge（只转 DOCX 的话不用装）
 
-# Convert a Markdown file
-python md2docx_pdf.py report.md
-
-# Convert to PDF
-python md2docx_pdf.py report.md -f pdf
-
-# Convert to both DOCX + PDF
-python md2docx_pdf.py report.md -f both
-
-# Batch convert all .md files
-python md2docx_pdf.py *.md -f both
-
-# Custom output directory
-python md2docx_pdf.py report.md -f both -o ./output
+python md2docx_pdf.py 报告.md                 # 转 DOCX
+python md2docx_pdf.py 报告.md -f pdf          # 转 PDF
+python md2docx_pdf.py 报告.md -f both         # 两个都转
+python md2docx_pdf.py *.md -f both            # 批量转
+python md2docx_pdf.py 报告.md -f both -o ./out # 指定输出目录
 ```
 
 ---
 
-## Features
+## 依赖安装
 
-- **DOCX output** — clean `.docx` via pandoc, preserving headings, tables, code blocks
-- **PDF output** — professional `.pdf` via headless Chrome/Edge, with injected CJK CSS
-- **Auto-detection** — finds Chrome/Edge/Chromium across Windows, macOS, Linux
-- **Dependency check** — on first run, detects missing tools and prints platform-specific install commands
-- **Batch mode** — `*.md` glob patterns, multiple files at once
-- **CJK fonts** — auto-injects `Microsoft YaHei`, `SimSun`, `PingFang SC`, `Noto Sans SC`
-- **Clean output** — tables with alternating rows, styled code blocks, bordered blockquotes
+首次运行会自动检测，缺什么打印什么。以下供手动参考：
 
----
+### pandoc（必装）
 
-## Installing Dependencies
+| 系统 | 装法 |
+|------|------|
+| Windows | `winget install pandoc` |
+| macOS | `brew install pandoc` |
+| Ubuntu/Debian | `sudo apt install pandoc` |
+| Fedora | `sudo dnf install pandoc` |
+| Arch | `sudo pacman -S pandoc` |
 
-### Step 1: Install Python 3.7+
+### 浏览器（转 PDF 才需要，工具自动搜索 Chrome/Edge/Chromium）
 
-Already installed? Check: `python --version`
-
-| Platform | Install |
-|----------|---------|
-| **Windows** | `winget install python` or https://www.python.org/downloads/ |
-| **macOS** | `brew install python` |
-| **Linux** | `sudo apt install python3` |
-
-### Step 2: Install pandoc (required)
-
-| Platform | Command |
-|----------|---------|
-| **Windows** | `winget install pandoc` |
-| **macOS** | `brew install pandoc` |
-| **Linux (Debian/Ubuntu)** | `sudo apt install pandoc` |
-| **Linux (Fedora)** | `sudo dnf install pandoc` |
-| **Linux (Arch)** | `sudo pacman -S pandoc` |
-
-Or download from: https://pandoc.org/installing.html
-
-### Step 3: Install a browser (for PDF only)
-
-Skip this if you only need DOCX output.
-
-| Platform | Option |
-|----------|--------|
-| **Windows** | Google Chrome or Microsoft Edge (usually pre-installed) |
-| **macOS** | `brew install --cask google-chrome` |
-| **Linux** | `sudo apt install chromium-browser` |
-
-The tool will auto-detect your browser from common install paths.
+| 系统 | 建议 |
+|------|------|
+| Windows | Chrome 或 Edge（系统自带） |
+| macOS | `brew install --cask google-chrome` |
+| Linux | `sudo apt install chromium-browser` |
 
 ---
 
-## Usage
+## 命令说明
 
 ```
-usage: md2docx_pdf.py [-h] [-f {docx,pdf,both}] [-o DIR] [--version]
-                      inputs [inputs ...]
+用法: md2docx_pdf.py <文件> [-f 格式] [-o 输出目录]
 
-positional arguments:
-  inputs                Markdown file(s) or glob patterns (e.g. "*.md")
-
-options:
-  -h, --help            show this help message and exit
-  -f, --format {docx,pdf,both}
-                        Output format (default: docx)
-  -o, --output DIR      Output directory (default: same as input file)
-  --version             show version number and exit
+参数:
+  inputs                要转的 md 文件，支持通配符 "*.md"
+  -f docx|pdf|both      输出格式，默认 docx
+  -o DIR                输出目录，默认跟源文件一起
+  --version             看版本
 ```
 
 ---
 
-## Examples
-
-```bash
-# Basic: single file to DOCX
-python md2docx_pdf.py report.md
-
-# Single file to PDF
-python md2docx_pdf.py report.md -f pdf
-
-# Single file to both formats
-python md2docx_pdf.py report.md -f both
-
-# Batch: all .md files to both formats
-python md2docx_pdf.py *.md -f both
-
-# With custom output directory
-python md2docx_pdf.py report.md -f both -o ./output
-
-# Multiple specific files
-python md2docx_pdf.py report1.md report2.md report3.md -f both
-```
-
-### Sample Output
+## 运行效果
 
 ```
 ==================================================
-  md2docx_pdf v1.0.0   https://github.com/cowhorse05/md2doc2pdf
+  md2docx_pdf v1.0.0
   Markdown -> DOCX / PDF Converter
 ==================================================
 
@@ -147,13 +81,13 @@ python md2docx_pdf.py report1.md report2.md report3.md -f both
   Format: both
   Output: (same as input)
 
-[FILE] report1.md (18,139 bytes)
-  -> DOCX: report1.docx ... [OK] (23,000 bytes)
-  -> PDF:  report1.pdf ... [OK] (652,383 bytes)
+[FILE] 课桥可用性测试评估.md (18,139 bytes)
+  -> DOCX: 课桥可用性测试评估.docx ... [OK] (23,000 bytes)
+  -> PDF:  课桥可用性测试评估.pdf ... [OK] (652,383 bytes)
 
-[FILE] report2.md (19,188 bytes)
-  -> DOCX: report2.docx ... [OK] (23,568 bytes)
-  -> PDF:  report2.pdf ... [OK] (836,750 bytes)
+[FILE] 失物招领可用性测试评估.md (19,188 bytes)
+  -> DOCX: 失物招领可用性测试评估.docx ... [OK] (23,568 bytes)
+  -> PDF:  失物招领可用性测试评估.pdf ... [OK] (836,750 bytes)
 
 ==================================================
   [OK] 4 succeeded   [FAIL] 0 failed   [TOTAL] 2 file(s)
@@ -162,63 +96,47 @@ python md2docx_pdf.py report1.md report2.md report3.md -f both
 
 ---
 
-## PDF Output Styling
+## PDF 排版
 
-The tool injects a clean, print-optimized CSS stylesheet into every PDF:
+自动注入中文排版 CSS：
 
-| Element | Style |
-|---------|-------|
-| **Headings** | h1 blue bottom-border, h2 gray bottom-border |
-| **Tables** | Bordered cells, bold headers, alternating row colors |
-| **Code** | Light gray background, monospace (Consolas/Courier New) |
-| **Blockquotes** | Blue left border, light blue background |
-| **Fonts** | Microsoft YaHei → SimSun → PingFang SC → Noto Sans SC |
+| 元素 | 效果 |
+|------|------|
+| 标题 | h1 蓝色下划线，h2 灰色下划线 |
+| 表格 | 带边框，表头加粗灰底，隔行变色 |
+| 代码 | 浅灰背景，等宽字体 |
+| 引用 | 蓝色左边框，浅蓝背景 |
+| 字体 | Microsoft YaHei → SimSun → PingFang SC → Noto Sans SC |
 
-If your system lacks Chinese fonts, install them:
-
-| Platform | Command |
-|----------|---------|
-| **Windows** | Already included (Microsoft YaHei, SimSun) |
-| **macOS** | Already included (PingFang SC) |
-| **Linux** | `sudo apt install fonts-noto-cjk` |
-
----
-
-## How It Works
-
-```
-Markdown (.md)
-    │
-    ├──> pandoc ──> DOCX (.docx)     [direct conversion]
-    │
-    └──> pandoc ──> HTML ──> Chrome/Edge headless ──> PDF (.pdf)
-                        │
-                        └── CSS injected for CJK + tables + code
+Linux 缺中文字体的话：
+```bash
+sudo apt install fonts-noto-cjk
 ```
 
-- **DOCX**: pandoc converts Markdown directly to Word format
-- **PDF**: pandoc first converts to HTML5, then the tool injects custom CSS, then a headless browser renders it to PDF
+---
+
+## 原理
+
+```
+.md ──pandoc──> .docx      （直接转）
+
+.md ──pandoc──> HTML ──注入CSS──> 无头浏览器 ──> .pdf
+```
 
 ---
 
-## Troubleshooting
+## 常见问题
 
-| Problem | Solution |
-|---------|----------|
-| `pandoc not found` | Install pandoc (see [Installing Dependencies](#installing-dependencies)) |
-| `No browser found` for PDF | Install Chrome/Edge, or set `BROWSER_PATH` env variable |
-| Chinese characters garbled in PDF | Install CJK fonts: `sudo apt install fonts-noto-cjk` (Linux) |
-| `Permission denied` | Check file permissions or close the .docx if opened in Word |
-| `File not found` for glob patterns | Use quotes: `python md2docx_pdf.py "*.md" -f both` |
-
----
-
-## Contributing
-
-Issues and pull requests welcome at: https://github.com/cowhorse05/md2doc2pdf
+| 问题 | 怎么搞 |
+|------|--------|
+| `pandoc not found` | 装 pandoc，见上面 |
+| 提示没浏览器 | 装 Chrome 或设 `BROWSER_PATH` |
+| PDF 中文乱码 | Linux 缺字体，`apt install fonts-noto-cjk` |
+| Permission denied | docx 被 Word 打开了，关了重试 |
+| 通配符不生效 | 加引号 `"*.md"` |
 
 ---
 
 ## License
 
-MIT — Li Yufeng, 2026
+MIT — 李裕峰
