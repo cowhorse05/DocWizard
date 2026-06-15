@@ -1,37 +1,43 @@
 {
   "name": "md2docx-pdf",
   "version": "1.0.0",
-  "description": "Convert one or more .md files to .docx and/or .pdf. Cross-platform: Windows, macOS, Linux. Auto-detects pandoc and Chrome/Edge on the user's system and prints platform-specific install commands if dependencies are missing.",
+  "description": "Convert .md files to .docx and/or .pdf. Cross-platform. Auto-detects pandoc and Chrome/Edge, prints install commands if missing.",
   "entry": "md2docx_pdf.py",
+  "repository": "https://github.com/cowhorse05/md2doc2pdf",
+  "license": "MIT",
   "python": ">=3.7",
-  "depends": {
-    "required": {
-      "pandoc": {
+
+  "install": {
+    "clone": "git clone https://github.com/cowhorse05/md2doc2pdf.git",
+    "steps": [
+      {
+        "desc": "Check Python version",
+        "check": "python --version 2>&1 | grep -oP '\\d+\\.\\d+' | head -1",
+        "min_version": "3.7"
+      },
+      {
+        "desc": "Check/install pandoc",
         "check": "pandoc --version",
-        "install": {
-          "windows": "winget install pandoc",
-          "macos": "brew install pandoc",
-          "linux": "sudo apt install pandoc"
-        }
+        "install_windows": "winget install pandoc",
+        "install_macos": "brew install pandoc",
+        "install_linux": "sudo apt install pandoc",
+        "note": "If winget/brew/apt not available, direct user to https://pandoc.org/installing.html"
+      },
+      {
+        "desc": "Check browser for PDF (optional, skip if only need DOCX)",
+        "check": "which google-chrome || which chromium-browser || which microsoft-edge || ls '/c/Program Files/Google/Chrome/Application/chrome.exe' || ls '/Applications/Google Chrome.app'",
+        "note": "If none found and PDF is needed, suggest installing Chrome or setting BROWSER_PATH"
       }
-    },
-    "optional": {
-      "browser": {
-        "description": "Chrome, Edge, or Chromium for PDF output only. Auto-searched from common paths.",
-        "install": {
-          "windows": "Chrome or Edge (usually pre-installed)",
-          "macos": "brew install --cask google-chrome",
-          "linux": "sudo apt install chromium-browser"
-        }
-      }
-    }
+    ],
+    "verify": "python md2docx_pdf.py --version"
   },
+
   "usage": {
     "command": "python md2docx_pdf.py <inputs> [-f FORMAT] [-o DIR]",
     "arguments": {
-      "inputs": ".md file paths or glob patterns like *.md. Supports multiple files.",
-      "-f": "Output format: docx (default), pdf, or both",
-      "-o": "Output directory. If omitted, files land next to their source .md files."
+      "inputs": ".md file paths or glob patterns like *.md",
+      "-f": "docx | pdf | both  (default: docx)",
+      "-o": "output directory  (default: same dir as input)"
     },
     "examples": [
       "python md2docx_pdf.py report.md",
@@ -41,6 +47,7 @@
       "python md2docx_pdf.py report.md -f both -o ./output"
     ]
   },
+
   "pipeline": {
     "docx": ".md -> pandoc -> .docx",
     "pdf": ".md -> pandoc -> html5 -> inject CJK CSS -> headless browser -> .pdf"
