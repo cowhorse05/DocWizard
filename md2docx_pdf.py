@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 """
-md2docx_pdf.py --- 大学生作业一站式转换工具
-============================================
+DocWizard — AI 驱动的作业一站式转换工具
+=========================================
+一句话，Markdown 到 Word/PDF 自动完成。
 扫描目录，自动检测 .md / .docx / .pdf / .tex / .drawio，每个文件转为其余格式。
+自动检测 Mermaid 图表并渲染为 PNG，嵌入 DOCX/PDF。
 
-.md     → .docx + .pdf    (drawio 引用自动替换为图片)
+.md     → .docx + .pdf    (Mermaid 自动渲染 → PNG → 嵌入)
 .docx   → .md + .pdf
 .pdf    → .md + .docx     (需要 pdftotext)
 .tex    → .pdf            (需要 xelatex / pdflatex，可选)
 .drawio → .png + .svg     (需要 drawio MCP)
 
 直接跑:  python md2docx_pdf.py           扫描目录，交互式互转
-加 -y:   python md2docx_pdf.py -y        跳过询问
+加 -y:   python md2docx_pdf.py -y        跳过询问，Mermaid 自动渲染
 加图表:  python md2docx_pdf.py -y --drawio   含图表导出
 
-GitHub: https://github.com/cowhorse05/md2doc2pdf
+GitHub: https://github.com/cowhorse05/DocWizard
 """
 
 import argparse
@@ -28,8 +30,8 @@ import tempfile
 from pathlib import Path
 from typing import Optional, List, Tuple, Dict
 
-VERSION = "1.6.0"
-REPO_URL = "https://github.com/cowhorse05/md2doc2pdf"
+VERSION = "2.0.0"
+REPO_URL = "https://github.com/cowhorse05/DocWizard"
 
 # ── Mermaid rendering ─────────────────────────────────────────────
 
@@ -605,8 +607,8 @@ _REF_DOCX: Optional[Path] = None
 
 def _force_black_text_in_docx(docx_path: Path):
     """Post-process a docx file to force ALL text to black.
-    Patches styles.xml and document.xml in memory, writes directly back.
-    This is the safety net — even if reference.docx fails, this catches it.
+    Patches ALL XML files in the ZIP, plus the theme to neutralize colors.
+    Aggressive mode: replaces any 6-char hex color with 000000.
     """
     import zipfile, re as _re, io
 
@@ -615,55 +617,89 @@ def _force_black_text_in_docx(docx_path: Path):
         with zipfile.ZipFile(docx_path, 'r') as zin:
             files = {name: zin.read(name) for name in zin.namelist()}
 
-        patched = False
+        patched = 0
 
-        # Patch styles.xml
-        if 'word/styles.xml' in files:
-            xml = files['word/styles.xml'].decode('utf-8')
-            # Replace all color values with 000000
-            xml = _re.sub(r'(<w:color\b[^>]*?)w:val="[^"]*"', r'\1w:val="000000"', xml)
-            # Kill themeColor/themeShade/themeTint — they override w:val
+        # ── Patch ALL XML files for color attributes ──────────
+        for name in list(files.keys()):
+            if not name.endswith('.xml'):
+                continue
+            try:
+                xml = files[name].decode('utf-8')
+            except UnicodeDecodeError:
+                continue
+
+            original = xml
+
+            # 1. Replace all w:color values with 000000
+            xml = _re.sub(
+                r'(<w:color\b[^>]*?)w:val="[^"]*"',
+                r'\1w:val="000000"',
+                xml
+            )
+
+            # 2. Kill all themeColor/themeShade/themeTint — they override w:val
             xml = _re.sub(r'\s*w:themeColor="[^"]*"', '', xml)
             xml = _re.sub(r'\s*w:themeShade="[^"]*"', '', xml)
             xml = _re.sub(r'\s*w:themeTint="[^"]*"', '', xml)
-            # Ensure default run props force black
-            if '<w:rPrDefault>' in xml:
+
+            # 3. Aggressive: any standalone w:val="XXXXXX" (6-char hex) → 000000
+            # This catches colors in non-standard places
+            xml = _re.sub(
+                r'(w:val=")([0-9A-Fa-f]{6})(")',
+                r'\g<1>000000\3',
+                xml
+            )
+
+            if xml != original:
+                files[name] = xml.encode('utf-8')
+                patched += 1
+
+        # ── Also patch theme XML to neutralize theme colors ───
+        theme_paths = [
+            'word/theme/theme1.xml',
+            'word/theme/theme.xml',
+            'word/theme/theme2.xml',
+        ]
+        for tp in theme_paths:
+            if tp in files:
+                xml = files[tp].decode('utf-8')
+                original = xml
+                # Replace all theme color values with black
                 xml = _re.sub(
-                    r'(<w:rPrDefault>\s*<w:rPr)([^>]*>)',
-                    r'\1\2><w:color w:val="000000"/>',
-                    xml, flags=_re.DOTALL)
-            else:
-                xml = xml.replace(
-                    '</w:docDefaults>',
-                    '<w:rPrDefault><w:rPr><w:color w:val="000000"/></w:rPr></w:rPrDefault></w:docDefaults>')
-            files['word/styles.xml'] = xml.encode('utf-8')
-            patched = True
+                    r'(<a:dk1>|<a:lt1>|<a:dk2>|<a:lt2>|<a:accent\d>|<a:hlink>|<a:folHlink>).*?</\1>',
+                    r'\g<1><a:srgbClr val="000000"/></\1>',
+                    xml
+                )
+                # Simpler: just nuke all srgbClr values in theme
+                xml = _re.sub(
+                    r'<a:srgbClr val="[^"]*"',
+                    '<a:srgbClr val="000000"',
+                    xml
+                )
+                # Also kill systemClr references
+                xml = _re.sub(
+                    r'<a:sysClr val="[^"]*"[^>]*>',
+                    '<a:srgbClr val="000000">',
+                    xml
+                )
+                if xml != original:
+                    files[tp] = xml.encode('utf-8')
+                    patched += 1
 
-        # Patch document.xml
-        if 'word/document.xml' in files:
-            xml = files['word/document.xml'].decode('utf-8')
-            xml = _re.sub(r'(<w:color\b[^>]*?)w:val="[^"]*"', r'\1w:val="000000"', xml)
-            xml = _re.sub(r'\s*w:themeColor="[^"]*"', '', xml)
-            xml = _re.sub(r'\s*w:themeShade="[^"]*"', '', xml)
-            xml = _re.sub(r'\s*w:themeTint="[^"]*"', '', xml)
-            files['word/document.xml'] = xml.encode('utf-8')
-            patched = True
+        if patched == 0:
+            return True  # Nothing changed, already clean
 
-        if not patched:
-            return True
-
-        # Build new zip in memory, write directly to original path
+        # ── Build new zip in memory ──────────────────────────
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zout:
             for name, data in files.items():
                 zout.writestr(name, data)
         new_bytes = buf.getvalue()
 
-        # Write directly — don't delete+rename (fails if Word has file open)
+        # ── Write back ───────────────────────────────────────
         try:
             docx_path.write_bytes(new_bytes)
         except PermissionError:
-            # File locked by another process, write to alternative name
             alt = docx_path.parent / f'{docx_path.stem}_black{docx_path.suffix}'
             alt.write_bytes(new_bytes)
         return True

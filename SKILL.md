@@ -1,4 +1,4 @@
-# md2docx-pdf Skill — Agent 操作手册
+# DocWizard Skill — Agent 操作手册
 
 ## 你的角色
 
@@ -68,10 +68,10 @@
 
 ```bash
 # 直接转换，Mermaid 块会自动渲染为 PNG
-python .claude/skills/md2docx-pdf/md2docx_pdf.py file.md -y
+python .claude/skills/DocWizard/md2docx_pdf.py file.md -y
 
 # 如果不想自动渲染（保留 Mermaid 代码块）
-python .claude/skills/md2docx-pdf/md2docx_pdf.py file.md -y --no-render-mermaid
+python .claude/skills/DocWizard/md2docx_pdf.py file.md -y --no-render-mermaid
 ```
 
 如果想手动渲染单个图：
@@ -110,7 +110,7 @@ print('saved diagram.png')
 ### Step 4: 转换
 
 ```bash
-python .claude/skills/md2docx-pdf/md2docx_pdf.py file.md -y --render-mermaid
+python .claude/skills/DocWizard/md2docx_pdf.py file.md -y --render-mermaid
 ```
 
 `--render-mermaid` 会自动扫描 .md 中的 Mermaid 块 → 渲染 PNG → 替换引用 → 转换。
@@ -164,7 +164,7 @@ pdftotext -layout file.pdf _preview_file.md
 ### Step 4: 执行转换（一把梭，不要逐文件问）
 ```bash
 # Mermaid 块会自动检测并渲染为 PNG！不需要额外参数
-python .claude/skills/md2docx-pdf/md2docx_pdf.py file.md -y
+python .claude/skills/DocWizard/md2docx_pdf.py file.md -y
 ```
 - 只转用户指定的文件，不要转 task.md 本身（除非用户明确要求）
 - 如果有新创建的 .md 文件，一并转换
@@ -260,4 +260,4 @@ pdftotext -layout file.pdf _preview_file.md
 python md2docx_pdf.py --update
 ```
 或直接让 agent 帮你：
-> 检查 md2docx-pdf 有没有新版本
+> 检查 DocWizard 有没有新版本

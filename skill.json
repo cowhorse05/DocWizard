@@ -1,17 +1,17 @@
 {
-  "name": "md2docx-pdf",
-  "version": "1.6.0",
-  "description": "大学生作业一站式转换：扫描目录，读 task.md，图表渲染管线（Mermaid→PNG），.md/.docx/.pdf/.tex 互转 + drawio 图表导出。安装时逐项可选。",
+  "name": "DocWizard",
+  "version": "2.0.0",
+  "description": "DocWizard — AI 驱动的作业助手：说一句话，Markdown 到 Word/PDF 自动完成。图表渲染管线、智能格式互转、可选依赖安装。",
   "entry": "md2docx_pdf.py",
   "test": "test_converter.py",
   "task_file": "task.md",
   "agent_manual": "SKILL.md",
-  "repository": "https://github.com/cowhorse05/md2doc2pdf",
+  "repository": "https://github.com/cowhorse05/DocWizard",
   "license": "MIT",
   "python": ">=3.7",
 
   "install": {
-    "clone": "git clone https://github.com/cowhorse05/md2doc2pdf.git",
+    "clone": "git clone https://github.com/cowhorse05/DocWizard.git",
     "setup_wizard": "python md2docx_pdf.py --setup",
     "description": "首次安装后运行 --setup 进入交互式向导，逐项检查依赖并提供可选安装。最后一步问用户是否扫描目录开始转换。",
 
@@ -220,7 +220,7 @@
   },
 
   "usage": {
-    "install": "git clone https://github.com/cowhorse05/md2doc2pdf.git && cd md2doc2pdf && python md2docx_pdf.py --setup",
+    "install": "git clone https://github.com/cowhorse05/DocWizard.git && cd DocWizard && python md2docx_pdf.py --setup",
     "setup": "python md2docx_pdf.py --setup   交互式设置向导，选择安装可选组件",
     "scan_mode": "python md2docx_pdf.py           扫描目录，交互式互转",
     "lazy_mode": "python md2docx_pdf.py -y        跳过询问，直接全转",

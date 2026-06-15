@@ -1,16 +1,16 @@
-# md2docx-pdf
+# DocWizard
 
-> `.md` ↔ `.docx` ↔ `.pdf` 三向互转。扫描目录，自动检测文档，每个文件转为其余两种格式。
+> AI 驱动的作业一站式助手。说一句话，Markdown → Word + PDF 自动完成。图表渲染、智能互转、可选依赖安装。
 
-跨平台，首次运行自动检查 pandoc（缺失会询问是否安装），完美支持中文排版。
+跨平台，首次运行 `--setup` 进入交互式设置向导，完美支持中文排版。
 
 ---
 
 ## 快速开始
 
 ```bash
-git clone https://github.com/cowhorse05/md2doc2pdf.git
-cd md2doc2pdf
+git clone https://github.com/cowhorse05/DocWizard.git
+cd DocWizard
 
 # 首次使用：交互式设置向导（选择安装可选组件）
 python md2docx_pdf.py --setup
@@ -40,7 +40,7 @@ python md2docx_pdf.py 报告.md -f pdf
 
 把下面这句话发给 Claude Code（或任意 AI 工具），它会自动 clone、逐项问你装不装可选依赖、然后扫描文件夹完成转换：
 
-> 帮我安装 https://github.com/cowhorse05/md2doc2pdf 这个 skill
+> 帮我安装 https://github.com/cowhorse05/DocWizard 这个 skill
 
 **AI 会这样一步步来：**
 
@@ -79,7 +79,7 @@ python md2docx_pdf.py --update
 
 或者对你的 AI 说：
 
-> 检查 md2docx-pdf 有没有新版本
+> 检查 DocWizard 有没有新版本
 
 ---
 
@@ -185,7 +185,7 @@ Windows 自带 Edge，macOS 和 Linux 装 Chrome 即可。
 ## 运行效果
 
 ```
-  md2docx_pdf v1.1.0  https://github.com/cowhorse05/md2doc2pdf
+  md2docx_pdf v1.1.0  https://github.com/cowhorse05/DocWizard
   平台: Windows
   pandoc: pandoc 3.9.0.2
   浏览器: chrome.exe
