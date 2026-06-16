@@ -1,13 +1,44 @@
 {
   "name": "DocWizard",
-  "version": "3.0.0",
-  "description": "DocWizard — AI 驱动的作业一站式助手：通过 document-skills 插件完成 Markdown/Word/PDF/PPT/Excel 互转与生成。零外部依赖，支持压缩包解压、中文学术排版。跨平台：Windows / macOS / Linux。",
+  "version": "3.1.0",
+  "description": "DocWizard — AI 驱动的作业一站式助手：通过 document-skills 插件完成 Markdown/Word/PDF/PPT/Excel 互转与生成。零外部依赖，支持压缩包解压、中文学术排版。跨平台：Windows / macOS / Linux。跨 harness：Claude Code / OpenCode / Codex / Cursor。",
   "entry": "SKILL.md",
   "test": "test_helpers.py",
   "task_file": "task.md",
   "agent_manual": "SKILL.md",
   "repository": "https://github.com/cowhorse05/DocWizard",
   "license": "MIT",
+
+  "harness_compatibility": {
+    "claude_code": {
+      "status": "full",
+      "skills_path": ".claude/skills/DocWizard/",
+      "document_skills": true,
+      "notes": "主要目标平台。完整功能。"
+    },
+    "opencode": {
+      "status": "full",
+      "skills_path": ".claude/skills/DocWizard/ 或 .opencode/skills/DocWizard/",
+      "document_skills": true,
+      "notes": "兼容 Claude Code skill 目录。OpenCode 读取 .claude/skills/ 作为 fallback。"
+    },
+    "codex": {
+      "status": "degraded",
+      "skills_path": ".codex/skills/DocWizard/ 或 .agents/skills/DocWizard/",
+      "document_skills": false,
+      "fallback": "格式转换降级为 Python 库（python-docx, python-pptx, openpyxl, pdfplumber）或 pandoc",
+      "notes": "无 document-skills 插件。需手动安装 Python 依赖。"
+    },
+    "cursor": {
+      "status": "degraded",
+      "skills_path": ".cursor/rules/docwizard.mdc",
+      "document_skills": false,
+      "fallback": "格式转换降级为 Python 库（python-docx, python-pptx, openpyxl, pdfplumber）或 pandoc",
+      "notes": "需将 SKILL.md 转换为 .mdc 格式（YAML frontmatter）。"
+    },
+    "cross_harness_path": ".agents/skills/DocWizard/",
+    "cross_harness_note": ".agents/skills/ 是新兴的跨工具标准路径，Claude Code、Codex、OpenCode 均支持。推荐新用户使用此路径。"
+  },
 
   "requires": {
     "plugins": ["document-skills@anthropic-agent-skills"],

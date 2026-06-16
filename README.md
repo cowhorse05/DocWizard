@@ -2,37 +2,45 @@
 
 > AI 驱动的作业一站式助手。说一句话，文档处理、数据分析、PPT 生成自动完成。零外部依赖，基于 Claude Code 内置 document-skills。
 
-**v3.0.0** — 纯 Claude Code Skill 架构。不再需要 pandoc、Chrome、pdftotext、LaTeX。
+**v3.1.0** — 多 harness 适配（Claude Code / OpenCode / Codex / Cursor）+ 内容精简。
 
 ---
 
 ## 快速开始
 
-### 1. 安装 document-skills 插件
+### 1. 安装 document-skills 插件（Claude Code / OpenCode）
 
 ```bash
 /plugin install document-skills@anthropic-agent-skills
 ```
 
-此插件一次安装包含 docx、pdf、pptx、xlsx 四个 Skill。
+此插件一次安装包含 docx、pdf、pptx、xlsx 四个 Skill。**仅 Claude Code 和 OpenCode 支持**。Codex / Cursor 用户见[降级方案](#非-claude-code--opencode-环境)。
 
 ### 2. Clone DocWizard
 
 ```bash
-git clone https://github.com/cowhorse05/DocWizard.git .claude/skills/DocWizard
+# 推荐：跨 harness 通用路径
+git clone https://github.com/cowhorse05/DocWizard.git .agents/skills/DocWizard
+
+# 或按 harness 选择：
+# Claude Code:  .claude/skills/DocWizard
+# OpenCode:     .claude/skills/DocWizard（兼容）或 .opencode/skills/DocWizard
+# Codex:        .codex/skills/DocWizard 或 .agents/skills/DocWizard
+# Cursor:       需转换为 .cursor/rules/docwizard.mdc 格式
 ```
 
 ### 3. 一句话搞定
 
-把下面这句话发给 Claude Code：
+把下面这句话发给 AI 编程助手：
 
 > 帮我安装 DocWizard skill
 
 AI 会自动：
-1. 检查 document-skills 插件是否已安装
-2. 扫描目录发现文档、数据、压缩包
-3. 按 task.md 的勾选执行处理
-4. 输出结构化汇报
+1. 检测当前 harness（Claude Code / OpenCode / Codex / Cursor）
+2. 检查 document-skills 插件是否可用（降级环境自动切换 Python 库方案）
+3. 扫描目录发现文档、数据、压缩包
+4. 按 task.md 的勾选执行处理
+5. 输出结构化汇报
 
 ### 或者直接说：
 
@@ -133,10 +141,31 @@ typst compile paper.typ output/paper.pdf
 
 ---
 
+## 非 Claude Code / OpenCode 环境
+
+Codex 和 Cursor 没有 `document-skills@anthropic-agent-skills` 插件。格式转换降级为 Python 库：
+
+```bash
+pip install python-docx python-pptx openpyxl pdfplumber pandas
+```
+
+| 操作 | Claude Code / OpenCode | Codex / Cursor 降级 |
+|------|----------------------|---------------------|
+| MD → DOCX | docx skill | pandoc 或 python-docx |
+| DOCX → MD | docx skill | pandoc 或 python-docx |
+| PDF → MD | pdf skill | pdfplumber / pymupdf |
+| XLSX/CSV | xlsx skill | openpyxl + pandas |
+| PPTX 生成 | pptx skill | python-pptx |
+| Mermaid 渲染 | `helpers/render_mermaid.py` | 同左（Python stdlib） |
+
+**Cursor 用户额外步骤**：需将 `SKILL.md` 转换为 `.cursor/rules/docwizard.mdc` 格式（添加 YAML frontmatter）。
+
+---
+
 ## 更新
 
 ```bash
-cd .claude/skills/DocWizard && git pull origin main
+cd .agents/skills/DocWizard && git pull origin main
 ```
 
 或者对你的 AI 说：

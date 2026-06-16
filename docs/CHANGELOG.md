@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## v3.1.0 (2026-06-16) — 多 Harness 适配 + 内容精简
+
+### 多 Harness 适配
+- **新增 harness 兼容性声明**：支持 Claude Code / OpenCode / Codex / Cursor 四种 AI 编程工具
+- **harness 自检机制**：启动时自动检测当前工具环境，选择对应的后端
+- **OpenCode 兼容**：确认 OpenCode 原生兼容 `.claude/skills/` 路径，无需额外配置
+- **跨 harness 通用路径**：推荐 `.agents/skills/DocWizard/` 作为统一安装路径
+- **转换后端降级**：Codex / Cursor 无 document-skills 插件时，自动降级为 Python 库（python-docx/openpyxl/pdfplumber/pandas）或 pandoc
+- **skill.json 新增 `harness_compatibility` 配置节**：记录各 harness 的支持状态、路径、降级方案
+
+### 内容精简
+- 删除重复的「转换规则」表（与 Stage 6 重复）
+- 删除重复的「LaTeX 编译支持」章节（与 .tex 委托模板重复）
+- 课程设计报告 ASCII 流程图 → 紧凑编号列表（节省 ~40 行）
+- 委托提示词模板缩短（引用 Stage 6 格式规范，减少重复）
+- FAQ 合并 RAR/7z 条目，改为交叉引用 Stage 3
+- 总精简 ~90 行（~8% 缩减）
+
+### 改进
+- README 新增「非 Claude Code / OpenCode 环境」降级方案章节
+- 更新命令路径从 `.claude/skills/` 改为 `.agents/skills/`
+
 ## v3.0.0 (2026-06-16) — 纯 Claude Code Skill 架构
 
 ### 架构重构
