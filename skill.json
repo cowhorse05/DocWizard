@@ -194,6 +194,45 @@
     "cleanup": ["*.aux", "*.log", "*.out", "*.toc", "*.synctex.gz", "*.bbl", "*.bcf", "*.blg", "*.run.xml", "*.fls", "*.fdb_latexmk", "*.xdv"]
   },
 
+  "mermaid_rendering": {
+    "primary": "mermaid.ink 在线 API（零依赖，base64 + urllib）",
+    "fallback": {
+      "tool": "mermaid-cli (@mermaid-js/mermaid-cli)",
+      "check": "command -v mmdc",
+      "install": "npm install -g @mermaid-js/mermaid-cli",
+      "usage": "mmdc -i <file>.mmd -o <output>.png -s 2",
+      "trigger": "mermaid.ink 网络超时/403 时自动切换"
+    }
+  },
+
+  "pdf_enhancement": {
+    "description": "当 document-skills pdf skill 对扫描版 PDF 效果不佳时的补充方案",
+    "skills": {
+      "pdf-converter-mineru": {"use": "扫描版 PDF OCR、复杂排版论文解析", "install": "/plugin install pdf-converter-mineru"},
+      "pdf-toolkit-mcp": {"use": "PDF 合并/拆分/水印/加密", "install": "/plugin install pdf-toolkit-mcp"}
+    },
+    "auto_detect": "用 pdfplumber 检测 PDF 第一页文字量，< 50 字符判定为扫描版"
+  },
+
+  "formula_enhancement": {
+    "description": "当文档包含大量 LaTeX 公式时的增强方案",
+    "skill": {"name": "@clipg/w2w", "use": "Markdown→Word + LaTeX 公式→OMML 原生公式", "install": "/plugin install @clipg/w2w"},
+    "trigger": "grep -c '$$' <file.md> ≥ 5 时建议使用"
+  },
+
+  "reference_management": {
+    "description": "从 .bib 文件生成格式化参考文献列表（作业级别，非论文级别）",
+    "supported_formats": {
+      "gbt7714": "GB/T 7714 — 中国高校论文标准",
+      "apa": "APA 7th — 心理学、教育学",
+      "mla": "MLA 9th — 人文社科"
+    },
+    "default_format": "gbt7714",
+    "bib_types": ["article", "book", "inproceedings", "incollection", "phdthesis", "mastersthesis", "techreport", "misc"],
+    "scope": "作业级别：课程论文、实验报告的参考文献格式化。不包括：文献综述、审稿模拟、预印本提交。",
+    "academic_paper_skills_note": "如需完整学术论文写作辅助（文献综述、审稿、预印本），建议额外安装 academic-paper-skills"
+  },
+
   "smart_scenarios": {
     "word_requirement_in_zip": {
       "trigger": "解压后发现 .docx 文件",

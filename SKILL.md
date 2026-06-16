@@ -500,6 +500,140 @@ pdflatex -interaction=nonstopmode -output-directory=./output <file>.tex
 
 ---
 
+## PDF 解析增强
+
+当 document-skills 的 pdf skill 对扫描版 PDF 或复杂排版论文效果不佳时，可以引入专项 PDF 解析 Skill 作为补充。
+
+### 推荐 Skill
+
+| Skill | 适用场景 | 安装 |
+|-------|----------|------|
+| `pdf-converter-mineru` | 扫描版 PDF OCR、复杂排版论文解析 | `/plugin install pdf-converter-mineru` |
+| `pdf-toolkit-mcp` | PDF 合并/拆分/水印/加密 | `/plugin install pdf-toolkit-mcp` |
+
+### 使用策略
+
+```
+检测 PDF 类型:
+  ├─ 文字型 PDF (document-skills pdf skill 能正常提取)
+  │   → 使用 pdf skill 提取文字和表格
+  │
+  ├─ 扫描版 PDF / 图片型 PDF / 复杂排版
+  │   → 检测 pdf-converter-mineru 是否可用
+  │   → 可用: 委托给 mineru 做 OCR 提取
+  │   → 不可用: 提示用户安装 pdf-converter-mineru
+  │
+  └─ 需要合并/拆分/加密操作
+      → 检测 pdf-toolkit-mcp 是否可用
+      → 可用: 委托给 pdf-toolkit-mcp
+      → 不可用: 用 Python pypdf 做基础操作
+```
+
+**PDF 类型自动检测**：
+```python
+# 快速检测 PDF 是否为扫描版（无文字层）
+import sys
+try:
+    import pdfplumber
+    with pdfplumber.open('file.pdf') as pdf:
+        text = pdf.pages[0].extract_text() or ''
+        if len(text.strip()) < 50:
+            print('SCANNED: PDF 可能是扫描版，建议使用 OCR')
+        else:
+            print(f'TEXT: 第一页有 {len(text)} 个字符')
+except ImportError:
+    print('UNKNOWN: 无法检测，使用 pdf skill 默认方式')
+```
+
+---
+
+## Markdown→Word 公式增强
+
+当文档包含大量 LaTeX 数学公式时，可引入专门的公式转换 Skill。
+
+### 推荐 Skill
+
+| Skill | 功能 | 安装 |
+|-------|------|------|
+| `@clipg/w2w` | Markdown→Word，LaTeX 公式→Word 原生 OMML 公式 | `/plugin install @clipg/w2w` |
+
+### 使用策略
+
+```
+检测 .md 中的公式密度:
+  ├─ 少量公式 (< 5个 $$...$$)
+  │   → 使用 document-skills docx skill 默认转换
+  │   → OMML 转换失败时降级为图片
+  │
+  └─ 大量公式 (≥ 5个 $$...$$) 或数学/物理作业
+      → 检测 @clipg/w2w 是否可用
+      → 可用: 委托给 w2w 做公式→OMML 转换
+      → 不可用: 提示用户安装 @clipg/w2w，暂用 docx skill
+```
+
+**公式密度检测**：
+```bash
+grep -c '\$\$' <file.md>
+```
+
+---
+
+## 参考文献管理
+
+支持从 `.bib` 文件生成格式化参考文献列表，支持常用引用格式。
+
+### 触发条件
+
+- 目录中存在 `.bib` 文件
+- task.md 中提到「参考文献」「引用格式」「bibliography」
+- Markdown 中有 `[@citation_key]` 或 `\cite{key}` 引用标记
+
+### 支持的引用格式
+
+| 格式 | 适用场景 | 示例 |
+|------|----------|------|
+| GB/T 7714 | 中国高校论文 | 张三, 李四. 人机交互设计原理[M]. 北京: 清华大学出版社, 2023. |
+| APA 7th | 心理学、教育学 | Zhang, S., & Li, S. (2023). *Human-Computer Interaction Design*. Tsinghua University Press. |
+| MLA 9th | 人文社科 | Zhang, San, and Si Li. *Human-Computer Interaction Design*. Tsinghua University Press, 2023. |
+
+### 处理流程
+
+```
+发现 .bib 文件:
+  1. 读取 .bib 内容
+  2. 检测 task.md 中指定的引用格式（默认 GB/T 7714）
+  3. 解析 BibTeX 条目 (article, book, inproceedings, etc.)
+  4. 按指定格式生成参考文献列表
+  5. 追加到输出文档末尾
+  6. 保留 .bib 源文件
+```
+
+**BibTeX 解析**（Python 示例）：
+```python
+import re
+def parse_bibtex(path):
+    entries = []
+    with open(path) as f:
+        content = f.read()
+    for match in re.finditer(r'@(\w+)\{(\w+),\s*(.+?)\}', content, re.DOTALL):
+        etype, key, fields = match.group(1), match.group(2), match.group(3)
+        entry = {'type': etype, 'key': key}
+        for fm in re.finditer(r'(\w+)\s*=\s*[{"](.+?)[}"]', fields):
+            entry[fm.group(1).lower()] = fm.group(2)
+        entries.append(entry)
+    return entries
+```
+
+**注意**：此功能面向**作业级别的参考文献处理**（课程论文、实验报告），不涉及：
+- 论文级别的文献综述
+- 7 维审稿模拟
+- 预印本平台提交
+- 期刊格式适配
+
+如果用户需要完整的学术论文写作辅助，建议额外安装 `academic-paper-skills`。
+
+---
+
 ## 上下文策略
 
 ### 核心原则：agent 必须能读懂所有文件
@@ -533,9 +667,30 @@ pdflatex -interaction=nonstopmode -output-directory=./output <file>.tex
 
 ### Mermaid 渲染
 
+**方式一：mermaid.ink 在线渲染（默认，零依赖）**：
 ```bash
 python helpers/render_mermaid.py <file.md> --output-dir ./output
 ```
+
+**方式二：mermaid-cli 本地渲染（可选，离线稳定）**：
+检测 `mmdc` 命令是否可用：
+```bash
+# 检测
+command -v mmdc &> /dev/null && echo "mermaid-cli available" || echo "not found"
+
+# 安装（需要 Node.js）
+npm install -g @mermaid-js/mermaid-cli
+
+# 使用
+mmdc -i <file>.mmd -o <output>.png -s 2
+```
+
+**渲染优先级**：
+1. 先尝试 mermaid.ink 在线渲染（零依赖，始终可用）
+2. 如果 mermaid.ink 网络不通（超时/403），且检测到 `mmdc` → 切换到本地渲染
+3. 渲染失败时报告并跳过该图表，继续处理其他文档
+
+**渲染后验证**：检查 PNG 文件大小 > 100 bytes，否则视为失败。
 
 支持图表类型：graph/flowchart, journey, sequenceDiagram, gantt, pie, classDiagram, stateDiagram, erDiagram
 
